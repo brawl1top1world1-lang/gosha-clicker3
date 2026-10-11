@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>67 CLICKER — ГОША СИГМА</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #1a0033, #000);
+    font-family: 'Arial', sans-serif;
+    user-select: none;
+    color: #fff;
+    touch-action: manipulation;
+  }
+
+  /* ======================================================
+     МАГАЗИН (левая панель)
+     ====================================================== */
+  #shop {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: min(380px, 35vw);
+    min-width: 280px;
+    background: linear-gradient(180deg, rgba(20,10,40,0.98), rgba(40,10,60,0.98));
+    backdrop-filter: blur(15px);
+    border-right: 2px solid rgba(255,94,0,0.4);
+    padding: clamp(10px, 2vw, 20px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 100;
+    box-shadow: 10px 0 40px rgba(255,94,0,0.15);
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #shop::-webkit-scrollbar { width: 6px; }
+  #shop::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+  #shop::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #ff5e00, #b30000);
+    border-radius: 4px;
+  }
+
+  .shop-header {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(180deg, rgba(20,10,40,0.98), rgba(20,10,40,0.9));
+    padding: 10px 0 15px;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+  }
+
+  .shop-title {
+    font-size: clamp(18px, 3vw, 24px);
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 6px;
+    color: #ffea00;
+    text-shadow: 0 0 15px #ff5e00, 0 0 30px #ff0000;
+    letter-spacing: 2px;
+  }
+
+  .shop-sub {
+    text-align: center;
+    font-size: clamp(10px, 2vw, 12px);
+    color: #fff;
+    opacity: 0.6;
+    margin-bottom: 10px;
+  }
+
+  /* Навигация по вкладкам */
+  .shop-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 8px 5px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,94,0,0.3);
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: clamp(11px, 2vw, 13px);
+    font-weight: bold;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: linear-gradient(135deg, #ff5e00, #b30000);
+    border-color: #ff5e00;
+    box-shadow: 0 0 15px rgba(255,94,0,0.5);
+  }
+
+  .tab-content {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  /* Заголовок секции */
+  .section-title {
+    font-size: clamp(11px, 2vw, 13px);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #ff5e00;
+    margin: 15px 0 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed rgba(255,94,0,0.4);
+    font-weight: bold;
+  }
+
+  /* Карточка улучшения */
+  .upgrade {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: clamp(8px, 1.5vw, 12px);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upgrade:hover:not(.locked) {
+    background: rgba(255,94,0,0.15);
+    border-color: rgba(255,94,0,0.6);
+    transform: translateX(3px);
+  }
+
+  .upgrade:active:not(.locked) {
+    transform: translateX(3px) scale(0.98);
+  }
+
+  .upgrade.locked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+  }
+
+  .upgrade.available {
+    border-color: #00ff88;
+    box-shadow: 0 0 15px rgba(0,255,136,0.4);
+  }
+
+  .upgrade-icon {
+    font-size: clamp(24px, 4vw, 32px);
+    flex-shrink: 0;
+    width: clamp(36px, 6vw, 44px);
+    text-align: center;
+  }
+
+  .upgrade-info { flex: 1; min-width: 0; }
+
+  .upgrade-name {
+    font-size: clamp(12px, 2.2vw, 14px);
+    font-weight: bold;
+    color: #ffea00;
+    margin-bottom: 2px;
+  }
+
+  .upgrade-desc {
+    font-size: clamp(9px, 1.8vw, 11px);
+    color: #ccc;
+    opacity: 0.75;
+    line-height: 1.3;
+  }
+
+  .upgrade-cost {
+    font-size: clamp(11px, 2vw, 13px);
+    font-weight: bold;
+    color: #00ff88;
+    margin-top: 4px;
+    text-shadow: 0 0 8px rgba(0,255,136,0.6);
+  }
+
+  .upgrade-level {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 10px;
+    background: rgba(255,94,0,0.8);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+  }
+
+  /* ======================================================
+     ГАЛЕРЕЯ
+     ====================================================== */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    padding: 5px;
+  }
+
+  .gallery-item {
+    aspect-ratio: 3/4;
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,94,0,0.3);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .gallery-item:hover:not(.locked) {
+    transform: translateY(-3px);
+    border-color: #ff5e00;
+    box-shadow: 0 5px 20px rgba(255,94,0,0.4);
+  }
+
+  .gallery-item.locked {
+    opacity: 0.6;
+    filter: grayscale(0.8);
+  }
+
+  .gallery-item.purchased {
+    border-color: #00ff88;
+    box-shadow: 0 0 15px rgba(0,255,136,0.3);
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .gallery-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    padding: 20px 5px 5px;
+    text-align: center;
+  }
+
+  .gallery-price {
+    font-size: clamp(10px, 2vw, 12px);
+    font-weight: bold;
+    color: #00ff88;
+    text-shadow: 0 0 8px rgba(0,255,136,0.6);
+  }
+
+  .gallery-item.purchased .gallery-price {
+    color: #ffea00;
+  }
+
+  .gallery-checkmark {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #00ff88;
+    color: #000;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .gallery-item.purchased .gallery-checkmark {
+    opacity: 1;
+  }
+
+  /* ======================================================
+     ИГРОВАЯ ОБЛАСТЬ
+     ====================================================== */
+  #game {
+    position: fixed;
+    left: min(380px, 35vw);
+    min-left: 280px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(10px, 3vw, 30px);
+    transition: left 0.3s ease;
+  }
+
+  /* Верхняя панель со статистикой */
+  #stats {
+    position: absolute;
+    top: clamp(10px, 2vh, 20px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: clamp(8px, 2vw, 20px);
+    z-index: 60;
+    width: min(90%, 600px);
+    max-width: 90%;
+  }
+
+  .stat {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,94,0,0.4);
+    border-radius: clamp(8px, 2vw, 12px);
+    padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 20px);
+    text-align: center;
+    backdrop-filter: blur(5px);
+    min-width: 0;
+  }
+
+  .stat-label {
+    font-size: clamp(8px, 1.5vw, 10px);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0.65;
+    margin-bottom: 3px;
+  }
+
+  .stat-value {
+    font-size: clamp(16px, 3vw, 22px);
+    font-weight: 900;
+    color: #ffea00;
+    text-shadow: 0 0 12px #ff5e00;
+    word-break: break-all;
+  }
+
+  .stat-value.sigma {
+    color: #00ff88;
+    text-shadow: 0 0 12px #00ff88;
+  }
+
+  /* ======================================================
+     КНОПКА 67
+     ====================================================== */
+  #btn67 {
+    position: relative;
+    width: clamp(150px, 30vw, 240px);
+    height: clamp(150px, 30vw, 240px);
+    border-radius: 50%;
+    border: none;
+    background: radial-gradient(circle at 30% 30%, #ffde59, #ff5e00, #b30000);
+    color: #fff;
+    font-size: clamp(48px, 12vw, 104px);
+    font-weight: 900;
+    font-family: 'Arial Black', Arial, sans-serif;
+    cursor: pointer;
+    box-shadow:
+      0 0 clamp(20px, 5vw, 40px) #ff5e00,
+      0 0 clamp(40px, 8vw, 80px) #ff0000,
+      inset 0 0 30px rgba(255,255,255,0.4);
+    text-shadow: 0 0 20px #fff, 0 0 40px #ffea00;
+    z-index: 50;
+    transition: transform 0.08s ease;
+    animation: btnPulse 1.5s infinite;
+    margin: clamp(20px, 5vh, 40px) 0;
+    touch-action: manipulation;
+  }
+
+  #btn67:active {
+    transform: scale(0.92);
+  }
+
+  @keyframes btnPulse {
+    0%, 100% { box-shadow: 0 0 40px #ff5e00, 0 0 80px #ff0000, inset 0 0 30px rgba(255,255,255,0.4); }
+    50%      { box-shadow: 0 0 60px #ffea00, 0 0 120px #ff0000, inset 0 0 40px rgba(255,255,255,0.7); }
+  }
+
+  /* Прогресс-бар до бонуса */
+  #bonus-progress-wrap {
+    width: min(320px, 80%);
+    height: clamp(12px, 2vh, 16px);
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+    box-shadow: 0 0 15px rgba(255,94,0,0.4);
+    position: relative;
+  }
+
+  #bonus-progress {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffde59, #ff5e00, #ff0000);
+    border-radius: 8px;
+    transition: width 0.15s ease;
+  }
+
+  #bonus-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(9px, 1.8vw, 11px);
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 5px #000;
+    letter-spacing: 1px;
+  }
+
+  /* Всплывающие цифры при клике */
+  .click-popup {
+    position: fixed;
+    font-weight: 900;
+    font-family: 'Arial Black', Arial, sans-serif;
+    pointer-events: none;
+    z-index: 55;
+    white-space: nowrap;
+    font-size: clamp(18px, 4vw, 28px);
+  }
+
+  /* Мемные числа */
+  .meme-popup {
+    position: fixed;
+    font-weight: 900;
+    font-family: 'Arial Black', Arial, sans-serif;
+    pointer-events: none;
+    z-index: 56;
+    white-space: nowrap;
+    font-size: clamp(24px, 5vw, 42px);
+    animation: memeBounce 0.8s ease-out;
+  }
+
+  @keyframes memeBounce {
+    0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); }
+    50% { transform: translate(-50%, -150%) scale(1.3) rotate(10deg); }
+    100% { transform: translate(-50%, -250%) scale(1) rotate(-5deg); opacity: 0; }
+  }
+
+  /* ======================================================
+     ЭФФЕКТЫ
+     ====================================================== */
+  .circle-svg {
+    position: fixed;
+    pointer-events: none;
+    z-index: 25;
+    will-change: transform, opacity;
+  }
+
+  .gosha-text {
+    position: fixed;
+    font-weight: 900;
+    font-family: 'Arial Black', Arial, sans-serif;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 35;
+    will-change: transform, opacity;
+    text-shadow: 0 0 10px currentColor, 0 0 25px currentColor, 0 0 45px currentColor;
+  }
+
+  .lightning {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 40;
+    filter: drop-shadow(0 0 10px #00eaff) drop-shadow(0 0 25px #fff);
+    animation: flash 0.4s ease-out forwards;
+  }
+
+  @keyframes flash {
+    0% { opacity: 0; } 10% { opacity: 1; } 30% { opacity: 0.3; }
+    50% { opacity: 1; } 100% { opacity: 0; }
+  }
+
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    pointer-events: none;
+    z-index: 45;
+    opacity: 0;
+  }
+
+  .shake { animation: shake 0.4s; }
+  @keyframes shake {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-10px, 5px); }
+    40% { transform: translate(8px, -6px); }
+    60% { transform: translate(-6px, -4px); }
+    80% { transform: translate(6px, 4px); }
+  }
+
+  /* Уведомление */
+  #toast {
+    position: fixed;
+    top: clamp(80px, 15vh, 100px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-30px);
+    background: linear-gradient(135deg, #00c853, #00ff88);
+    color: #003;
+    padding: clamp(10px, 2vw, 12px) clamp(18px, 3vw, 24px);
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: clamp(12px, 2.5vw, 15px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 200;
+    box-shadow: 0 0 30px rgba(0,255,136,0.7);
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+    max-width: 90%;
+    text-align: center;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Кнопка сброса */
+  #reset-btn {
+    position: fixed;
+    bottom: clamp(10px, 2vh, 15px);
+    left: clamp(10px, 2vw, 15px);
+    background: rgba(255,0,0,0.2);
+    border: 1px solid rgba(255,0,0,0.5);
+    color: #ff6666;
+    padding: clamp(5px, 1vw, 6px) clamp(10px, 2vw, 12px);
+    border-radius: 8px;
+    font-size: clamp(9px, 1.8vw, 11px);
+    cursor: pointer;
+    z-index: 150;
+    transition: all 0.2s;
+  }
+
+  #reset-btn:hover {
+    background: rgba(255,0,0,0.4);
+    color: #fff;
+  }
+
+  /* Закрытие/открытие магазина на мобильных */
+  #shop-toggle {
+    display: none;
+    position: fixed;
+    top: clamp(10px, 2vh, 15px);
+    left: clamp(10px, 2vw, 15px);
+    z-index: 200;
+    background: linear-gradient(135deg, #ff5e00, #b30000);
+    color: #fff;
+    border: none;
+    width: clamp(40px, 8vw, 44px);
+    height: clamp(40px, 8vw, 44px);
+    border-radius: 50%;
+    font-size: clamp(16px, 4vw, 20px);
+    cursor: pointer;
+    box-shadow: 0 0 20px #ff5e00;
+  }
+
+  /* Модальное окно для просмотра фото */
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal.active {
+    display: flex;
+  }
+
+  .modal img {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 10px;
+    box-shadow: 0 0 50px rgba(255,94,0,0.5);
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,94,0,0.8);
+    border: none;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  /* ======================================================
+     АДАПТАЦИЯ ПОД РАЗНЫЕ ЭКРАНЫ
+     ====================================================== */
+  
+  /* Планшеты */
+  @media (max-width: 1024px) {
+    #shop {
+      width: min(320px, 40vw);
+    }
+    #game {
+      left: min(320px, 40vw);
+    }
+  }
+
+  /* Мобильные */
+  @media (max-width: 768px) {
+    #shop {
+      width: min(300px, 75vw);
+      transform: translateX(-100%);
+    }
+    #shop.open {
+      transform: translateX(0);
+    }
+    #game {
+      left: 0;
+    }
+    #shop-toggle {
+      display: block;
+    }
+    .gallery-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Маленькие мобильные */
+  @media (max-width: 480px) {
+    #stats {
+      grid-template-columns: 1fr;
+      gap: 5px;
+      width: 95%;
+    }
+    .stat {
+      padding: 6px 10px;
+    }
+    .gallery-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .shop-tabs {
+      gap: 3px;
+    }
+    .tab-btn {
+      min-width: 60px;
+      padding: 6px 3px;
+    }
+  }
+
+  /* Альбомная ориентация на мобильных */
+  @media (max-height: 500px) and (orientation: landscape) {
+    #game {
+      flex-direction: row;
+      justify-content: space-around;
+    }
+    #btn67 {
+      width: clamp(100px, 25vh, 150px);
+      height: clamp(100px, 25vh, 150px);
+      margin: 0 20px;
+    }
+    #stats {
+      top: 5px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* Очень маленькие экраны */
+  @media (max-width: 360px) {
+    .gallery-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<button id="shop-toggle">☰</button>
+
+<!-- ================= МАГАЗИН ================= -->
+<div id="shop">
+  <div class="shop-header">
+    <div class="shop-title"> МАГАЗИН</div>
+    <div class="shop-sub">Прокачивайся и кликай</div>
+    
+    <div class="shop-tabs">
+      <button class="tab-btn active" data-tab="upgrades">⬆️ Улучшения</button>
+      <button class="tab-btn" data-tab="gallery">📷 Галерея</button>
+    </div>
+  </div>
+
+  <!-- Вкладка улучшений -->
+  <div id="tab-upgrades" class="tab-content active">
+    <div class="section-title">Улучшения клика</div>
+    <div id="shop-click"></div>
+
+    <div class="section-title">Автокликеры</div>
+    <div id="shop-auto"></div>
+
+    <div class="section-title">Множители</div>
+    <div id="shop-multi"></div>
+
+    <div class="section-title">Мемные бонусы</div>
+    <div id="shop-meme"></div>
+  </div>
+
+  <!-- Вкладка галереи -->
+  <div id="tab-gallery" class="tab-content">
+    <div class="section-title">Фото Гоши (купи все!)</div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+  </div>
+
+  <button id="reset-btn">🗑 Сброс</button>
+</div>
+
+<!-- ================= ИГРА ================= -->
+<div id="game">
+  <div id="stats">
+    <div class="stat">
+      <div class="stat-label">Сигмы</div>
+      <div class="stat-value sigma" id="stat-sigma">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">За клик</div>
+      <div class="stat-value" id="stat-per-click">1</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">В секунду</div>
+      <div class="stat-value" id="stat-per-sec">0</div>
+    </div>
+  </div>
+
+  <button id="btn67">67</button>
+
+  <div id="bonus-progress-wrap">
+    <div id="bonus-progress"></div>
+    <div id="bonus-label">0 / 67 до бонуса</div>
+  </div>
+</div>
+
+<!-- Модальное окно для фото -->
+<div class="modal" id="photo-modal">
+  <button class="modal-close" onclick="closeModal()">×</button>
+  <img src="" alt="Photo" id="modal-img">
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   ДАННЫЕ ГАЛЕРЕИ (5 фото)
+   ============================================================ */
+const GALLERY_PHOTOS = [
+  { id: 1, price: 200000, src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect fill="%23333" width="400" height="500"/><text fill="%23fff" font-size="24" x="50%" y="50%" text-anchor="middle">Фото 1</text></svg>', name: 'Гоша в кровати' },
+  { id: 2, price: 1000000, src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect fill="%23444" width="400" height="500"/><text fill="%23fff" font-size="24" x="50%" y="50%" text-anchor="middle">Фото 2</text></svg>', name: 'Гоша с друзьями' },
+  { id: 3, price: 5000000, src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect fill="%23555" width="400" height="500"/><text fill="%23fff" font-size="24" x="50%" y="50%" text-anchor="middle">Фото 3</text></svg>', name: 'Гоша на улице' },
+  { id: 4, price: 15000000, src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect fill="%23666" width="400" height="500"/><text fill="%23fff" font-size="24" x="50%" y="50%" text-anchor="middle">Фото 4</text></svg>', name: 'Гоша с банкой' },
+  { id: 5, price: 50000000, src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect fill="%23777" width="400" height="500"/><text fill="%23fff" font-size="24" x="50%" y="50%" text-anchor="middle">Фото 5</text></svg>', name: 'Гоша у машины' }
+];
+
+/* ============================================================
+   ЗВУК
+   ============================================================ */
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playClick(step) {
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(300 + (step % 20) * 20, now);
+  gain.gain.setValueAtTime(0.1, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.08);
+}
+
+function playBuy() {
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  [660, 880, 1320].forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = f;
+    gain.gain.setValueAtTime(0.001, now + i * 0.06);
+    gain.gain.exponentialRampToValueAtTime(0.08, now + i * 0.06 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.1);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now + i * 0.06);
+    osc.stop(now + i * 0.06 + 0.12);
+  });
+}
+
+function playExplosion() {
+  const ctx = getCtx();
+  const dur = 0.7;
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(800, ctx.currentTime);
+  filter.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + dur);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.5, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  src.connect(filter).connect(gain).connect(ctx.destination);
+  src.start();
+  src.stop(ctx.currentTime + dur);
+}
+
+function playLightning() {
+  const ctx = getCtx();
+  const dur = 0.25;
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 1500;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.28, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  src.connect(filter).connect(gain).connect(ctx.destination);
+  src.start();
+  src.stop(ctx.currentTime + dur);
+}
+
+function playBlip(freq) {
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(freq || 800, now);
+  osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+  gain.gain.setValueAtTime(0.06, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.12);
+}
+
+function playFanfare() {
+  const ctx = getCtx();
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((f, i) => {
+    const now = ctx.currentTime + i * 0.12;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = f;
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.4);
+  });
+}
+
+function playMemeSound(num) {
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  const frequencies = {
+    69: [349, 440, 523],
+    1488: [261, 329, 392, 523],
+    52: [392, 493, 587],
+    42: [440, 554, 659]
+  };
+  const freqs = frequencies[num] || [440];
+  freqs.forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    gain.gain.setValueAtTime(0.08, now + i * 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.15);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now + i * 0.05);
+    osc.stop(now + i * 0.05 + 0.15);
+  });
+}
+
+/* ============================================================
+   ЭФФЕКТЫ
+   ============================================================ */
+function spawnVectorCircle(x, y, opts = {}) {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const size = opts.size || (40 + Math.random() * 90);
+  const hue = opts.hue !== undefined ? opts.hue : Math.floor(Math.random() * 360);
+  const strokeWidth = 3 + Math.random() * 4;
+  const gid = 'g' + Math.random().toString(36).slice(2, 9);
+
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('class', 'circle-svg');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.style.left = (x - size / 2) + 'px';
+  svg.style.top = (y - size / 2) + 'px';
+
+  const defs = document.createElementNS(svgNS, 'defs');
+  const grad = document.createElementNS(svgNS, 'radialGradient');
+  grad.setAttribute('id', gid);
+  grad.setAttribute('cx', '35%');
+  grad.setAttribute('cy', '35%');
+  grad.setAttribute('r', '70%');
+
+  const s1 = document.createElementNS(svgNS, 'stop');
+  s1.setAttribute('offset', '0%');
+  s1.setAttribute('stop-color', `hsl(${hue}, 100%, 75%)`);
+  const s2 = document.createElementNS(svgNS, 'stop');
+  s2.setAttribute('offset', '100%');
+  s2.setAttribute('stop-color', `hsl(${(hue + 60) % 360}, 100%, 45%)`);
+  grad.appendChild(s1); grad.appendChild(s2);
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+
+  const c = document.createElementNS(svgNS, 'circle');
+  c.setAttribute('cx', '50'); c.setAttribute('cy', '50'); c.setAttribute('r', '42');
+  c.setAttribute('fill', `url(#${gid})`);
+  c.setAttribute('stroke', `hsl(${hue}, 100%, 85%)`);
+  c.setAttribute('stroke-width', strokeWidth);
+  svg.appendChild(c);
+
+  const inner = document.createElementNS(svgNS, 'circle');
+  inner.setAttribute('cx', '50'); inner.setAttribute('cy', '50'); inner.setAttribute('r', '30');
+  inner.setAttribute('fill', 'none');
+  inner.setAttribute('stroke', `hsla(${hue}, 100%, 95%, 0.7)`);
+  inner.setAttribute('stroke-width', '1.5');
+  inner.setAttribute('stroke-dasharray', '6 4');
+  svg.appendChild(inner);
+
+  const shine = document.createElementNS(svgNS, 'circle');
+  shine.setAttribute('cx', '32'); shine.setAttribute('cy', '30'); shine.setAttribute('r', '8');
+  shine.setAttribute('fill', 'rgba(255,255,255,0.75)');
+  svg.appendChild(shine);
+
+  document.body.appendChild(svg);
+
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 100 + Math.random() * 350;
+  const dx = Math.cos(angle) * dist;
+  const dy = Math.sin(angle) * dist;
+  const rot = (Math.random() - 0.5) * 720;
+
+  svg.animate([
+    { transform: 'translate(0,0) scale(0.2) rotate(0deg)', opacity: 1 },
+    { transform: `translate(${dx}px, ${dy}px) scale(1.1) rotate(${rot/2}deg)`, opacity: 1, offset: 0.5 },
+    { transform: `translate(${dx*1.4}px, ${dy*1.4}px) scale(0.4) rotate(${rot}deg)`, opacity: 0 }
+  ], { duration: 900 + Math.random() * 700, easing: 'cubic-bezier(.2,.7,.4,1)' })
+    .onfinish = () => svg.remove();
+}
+
+function spawnGoshaText(x, y) {
+  const el = document.createElement('div');
+  el.className = 'gosha-text';
+  el.textContent = 'гоша сигма 67';
+  const size = 24 + Math.random() * 90;
+  el.style.fontSize = size + 'px';
+  el.style.color = `hsl(${Math.floor(Math.random()*360)}, 100%, 65%)`;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.transform = 'translate(-50%, -50%)';
+  document.body.appendChild(el);
+
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 150 + Math.random() * 500;
+  const dx = Math.cos(angle) * dist;
+  const dy = Math.sin(angle) * dist;
+  const rot = (Math.random() - 0.5) * 90;
+
+  el.animate([
+    { transform: 'translate(-50%, -50%) scale(0.1) rotate(0deg)', opacity: 0 },
+    { transform: 'translate(-50%, -50%) scale(1.3) rotate(0deg)', opacity: 1, offset: 0.15 },
+    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.6) rotate(${rot}deg)`, opacity: 0 }
+  ], { duration: 1100 + Math.random() * 800, easing: 'cubic-bezier(.2,.7,.4,1)' })
+    .onfinish = () => el.remove();
+}
+
+function lightning() {
+  const startX = Math.random() * window.innerWidth;
+  const segments = 8 + Math.floor(Math.random() * 6);
+  const stepY = window.innerHeight / segments;
+  let path = `M ${startX} 0`;
+  let x = startX;
+  for (let i = 1; i <= segments; i++) {
+    x += (Math.random() - 0.5) * 120;
+    path += ` L ${x} ${stepY * i}`;
+  }
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('class', 'lightning');
+  svg.setAttribute('width', window.innerWidth);
+  svg.setAttribute('height', window.innerHeight);
+  [['#aef6ff', 4], ['#ffffff', 1.5]].forEach(([stroke, w]) => {
+    const p = document.createElementNS(svgNS, 'path');
+    p.setAttribute('d', path);
+    p.setAttribute('stroke', stroke);
+    p.setAttribute('stroke-width', w);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke-linejoin', 'round');
+    p.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(p);
+  });
+  document.body.appendChild(svg);
+  playLightning();
+  screenFlash();
+  setTimeout(() => svg.remove(), 450);
+}
+
+function screenFlash() {
+  const f = document.createElement('div');
+  f.className = 'flash-overlay';
+  document.body.appendChild(f);
+  f.animate([
+    { opacity: 0 }, { opacity: 0.85, offset: 0.1 }, { opacity: 0 }
+  ], { duration: 300, easing: 'ease-out' }).onfinish = () => f.remove();
+}
+
+function shakeScreen() {
+  document.body.classList.remove('shake');
+  void document.body.offsetWidth;
+  document.body.classList.add('shake');
+  setTimeout(() => document.body.classList.remove('shake'), 420);
+}
+
+/* ============================================================
+   УВЕДОМЛЕНИЕ
+   ============================================================ */
+const toast = document.getElementById('toast');
+let toastTimer = null;
+function showToast(text, isGood = true) {
+  toast.textContent = text;
+  toast.style.background = isGood
+    ? 'linear-gradient(135deg, #00c853, #00ff88)'
+    : 'linear-gradient(135deg, #b30000, #ff5e00)';
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+/* ============================================================
+   ДАННЫЕ ИГРЫ
+   ============================================================ */
+const SAVE_KEY = 'clicker67_save_v2';
+
+const defaultState = {
+  sigmas: 0,
+  totalSigmas: 0,
+  clicks: 0,
+  clickCount: 0,
+  upgrades: {},
+  gallery: [], // купленные фото
+  memeNumbers: { 69: false, 1488: false, 52: false, 42: false }
+};
+
+let state = loadGame();
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) return { ...defaultState, ...JSON.parse(raw) };
+  } catch(e) {}
+  return { ...defaultState };
+}
+
+function saveGame() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch(e) {}
+}
+
+/* ============================================================
+   ОПРЕДЕЛЕНИЯ УЛУЧШЕНИЙ
+   ============================================================ */
+const UPGRADES = {
+  click1: {
+    cat: 'click',
+    icon: '👆',
+    name: 'Крепкий палец',
+    desc: '+1 к силе клика',
+    baseCost: 15,
+    costMult: 1.15,
+    effect: (lv) => lv * 1,
+    effectLabel: (lv) => `+${lv} за клик`,
+  },
+  click2: {
+    cat: 'click',
+    icon: '💪',
+    name: 'Сигма-хват',
+    desc: '+5 к силе клика',
+    baseCost: 200,
+    costMult: 1.18,
+    effect: (lv) => lv * 5,
+    requires: (s) => (s.upgrades.click1 || 0) >= 5,
+    effectLabel: (lv) => `+${lv*5} за клик`,
+  },
+  click3: {
+    cat: 'click',
+    icon: '',
+    name: 'Огненный клик',
+    desc: '+25 к силе клика',
+    baseCost: 3000,
+    costMult: 1.20,
+    effect: (lv) => lv * 25,
+    requires: (s) => (s.upgrades.click2 || 0) >= 10,
+    effectLabel: (lv) => `+${lv*25} за клик`,
+  },
+  auto1: {
+    cat: 'auto',
+    icon: '',
+    name: 'Бот-67',
+    desc: '+1 сигма в секунду',
+    baseCost: 50,
+    costMult: 1.15,
+    effect: (lv) => lv * 1,
+    effectLabel: (lv) => `+${lv} сигм/сек`,
+  },
+  auto2: {
+    cat: 'auto',
+    icon: '⚙️',
+    name: 'Фабрика',
+    desc: '+10 сигм в секунду',
+    baseCost: 800,
+    costMult: 1.17,
+    effect: (lv) => lv * 10,
+    requires: (s) => (s.upgrades.auto1 || 0) >= 10,
+    effectLabel: (lv) => `+${lv*10} сигм/сек`,
+  },
+  auto3: {
+    cat: 'auto',
+    icon: '🏭',
+    name: 'Мегазавод',
+    desc: '+100 сигм в секунду',
+    baseCost: 12000,
+    costMult: 1.19,
+    effect: (lv) => lv * 100,
+    requires: (s) => (s.upgrades.auto2 || 0) >= 15,
+    effectLabel: (lv) => `+${lv*100} сигм/сек`,
+  },
+  multi1: {
+    cat: 'multi',
+    icon: '✨',
+    name: 'Сигма-аура',
+    desc: '×1.5 ко ВСЕМУ доходу',
+    baseCost: 5000,
+    costMult: 2.5,
+    maxLevel: 5,
+    effect: (lv) => Math.pow(1.5, lv),
+    effectLabel: (lv) => `×${Math.pow(1.5, lv).toFixed(2)}`,
+  },
+  multi2: {
+    cat: 'multi',
+    icon: '👑',
+    name: 'Корона Гоши',
+    desc: '×2 ко ВСЕМУ доходу',
+    baseCost: 100000,
+    costMult: 3,
+    maxLevel: 5,
+    effect: (lv) => Math.pow(2, lv),
+    requires: (s) => (s.upgrades.multi1 || 0) >= 3,
+    effectLabel: (lv) => `×${Math.pow(2, lv)}`,
+  },
+  // МЕМНЫЕ ЧИСЛА
+  meme69: {
+    cat: 'meme',
+    icon: '😏',
+    name: '69 (nice)',
+    desc: 'Шанс 10% получить ×69 к клику',
+    baseCost: 69000,
+    costMult: 3,
+    maxLevel: 1,
+    effect: (lv) => lv > 0 ? 69 : 1,
+  },
+  meme1488: {
+    cat: 'meme',
+    icon: '❄️',
+    name: '1488',
+    desc: 'Каждый 1488-й клик даёт ×1488',
+    baseCost: 148800,
+    costMult: 5,
+    maxLevel: 1,
+    effect: (lv) => lv > 0 ? 1488 : 1,
+  },
+  meme52: {
+    cat: 'meme',
+    icon: '🎴',
+    name: '52 карты',
+    desc: '+52 к базовому клику',
+    baseCost: 52000,
+    costMult: 2,
+    maxLevel: 1,
+    effect: (lv) => lv > 0 ? 52 : 0,
+  },
+  meme42: {
+    cat: 'meme',
+    icon: '',
+    name: '42 (ответ)',
+    desc: '×42 к авто-доходу',
+    baseCost: 420000,
+    costMult: 4,
+    maxLevel: 1,
+    effect: (lv) => lv > 0 ? 42 : 1,
+  }
+};
+
+/* ============================================================
+   РАСЧЁТЫ
+   ============================================================ */
+function getUpgradeLevel(id) {
+  return state.upgrades[id] || 0;
+}
+
+function getUpgradeCost(id) {
+  const u = UPGRADES[id];
+  const lv = getUpgradeLevel(id);
+  return Math.floor(u.baseCost * Math.pow(u.costMult, lv));
+}
+
+function isMaxed(id) {
+  const u = UPGRADES[id];
+  return u.maxLevel !== undefined && getUpgradeLevel(id) >= u.maxLevel;
+}
+
+function isUnlocked(id) {
+  const u = UPGRADES[id];
+  if (!u.requires) return true;
+  return u.requires(state);
+}
+
+function getMultiplier() {
+  let m = 1;
+  m *= UPGRADES.multi1.effect(getUpgradeLevel('multi1'));
+  m *= UPGRADES.multi2.effect(getUpgradeLevel('multi2'));
+  return m;
+}
+
+function getSigmasPerClick() {
+  let base = 1;
+  base += UPGRADES.click1.effect(getUpgradeLevel('click1'));
+  base += UPGRADES.click2.effect(getUpgradeLevel('click2'));
+  base += UPGRADES.click3.effect(getUpgradeLevel('click3'));
+  base += UPGRADES.meme52.effect(getUpgradeLevel('meme52'));
+  return Math.floor(base * getMultiplier());
+}
+
+function getSigmasPerSec() {
+  let base = 0;
+  base += UPGRADES.auto1.effect(getUpgradeLevel('auto1'));
+  base += UPGRADES.auto2.effect(getUpgradeLevel('auto2'));
+  base += UPGRADES.auto3.effect(getUpgradeLevel('auto3'));
+  base *= UPGRADES.meme42.effect(getUpgradeLevel('meme42'));
+  return base * getMultiplier();
+}
+
+/* ============================================================
+   ФОРМАТИРОВАНИЕ ЧИСЕЛ
+   ============================================================ */
+function formatNum(n) {
+  if (n < 1000) return Math.floor(n).toString();
+  if (n < 1e6) return (n / 1e3).toFixed(1) + 'K';
+  if (n < 1e9) return (n / 1e6).toFixed(2) + 'M';
+  if (n < 1e12) return (n / 1e9).toFixed(2) + 'B';
+  return (n / 1e12).toFixed(2) + 'T';
+}
+
+/* ============================================================
+   ГАЛЕРЕЯ
+   ============================================================ */
+function renderGallery() {
+  const grid = document.getElementById('gallery-grid');
+  grid.innerHTML = '';
+  
+  GALLERY_PHOTOS.forEach(photo => {
+    const purchased = state.gallery.includes(photo.id);
+    const item = document.createElement('div');
+    item.className = `gallery-item ${purchased ? 'purchased' : ''} ${state.sigmas < photo.price && !purchased ? 'locked' : ''}`;
+    
+    item.innerHTML = `
+      <img src="${photo.src}" alt="${photo.name}" loading="lazy">
+      <div class="gallery-checkmark">✓</div>
+      <div class="gallery-overlay">
+        <div class="gallery-price">${purchased ? '✓ КУПЛЕНО' : formatNum(photo.price) + ' 💎'}</div>
+      </div>
+    `;
+    
+    if (!purchased) {
+      item.addEventListener('click', () => buyPhoto(photo));
+    } else {
+      item.addEventListener('click', () => openModal(photo.src));
+    }
+    
+    grid.appendChild(item);
+  });
+}
+
+function buyPhoto(photo) {
+  if (state.sigmas < photo.price) {
+    showToast(`❌ Нужно ${formatNum(photo.price)} сигм!`, false);
+    return;
+  }
+  
+  state.sigmas -= photo.price;
+  state.gallery.push(photo.id);
+  saveGame();
+  playBuy();
+  showToast(`✅ Куплено: ${photo.name}`);
+  renderGallery();
+  renderStats();
+}
+
+function openModal(src) {
+  document.getElementById('modal-img').src = src;
+  document.getElementById('photo-modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('photo-modal').classList.remove('active');
+}
+
+/* ============================================================
+   ОТРИСОВКА МАГАЗИНА
+   ============================================================ */
+function renderShop() {
+  ['click', 'auto', 'multi', 'meme'].forEach(cat => {
+    const container = document.getElementById('shop-' + cat);
+    if (!container) return;
+    container.innerHTML = '';
+    Object.entries(UPGRADES)
+      .filter(([, u]) => u.cat === cat)
+      .forEach(([id, u]) => {
+        const lv = getUpgradeLevel(id);
+        const maxed = isMaxed(id);
+        const unlocked = isUnlocked(id);
+        const cost = getUpgradeCost(id);
+        const canAfford = state.sigmas >= cost;
+
+        const div = document.createElement('div');
+        div.className = 'upgrade';
+        if (!unlocked) div.classList.add('locked');
+        else if (canAfford && !maxed) div.classList.add('available');
+
+        div.innerHTML = `
+          <div class="upgrade-icon">${u.icon}</div>
+          <div class="upgrade-info">
+            <div class="upgrade-name">${u.name}${lv > 0 ? ` <span style="color:#00ff88">${u.effectLabel(lv)}</span>` : ''}</div>
+            <div class="upgrade-desc">${u.desc}</div>
+            ${!unlocked
+              ? `<div class="upgrade-cost" style="color:#ff6666">🔒 Требует предыдущие улучшения</div>`
+              : maxed
+                ? `<div class="upgrade-cost" style="color:#ffea00">★ МАКСИМУМ</div>`
+                : `<div class="upgrade-cost"> ${formatNum(cost)} сигм</div>`}
+          </div>
+          ${lv > 0 ? `<div class="upgrade-level">ур. ${lv}${u.maxLevel ? '/' + u.maxLevel : ''}</div>` : ''}
+        `;
+
+        if (unlocked && !maxed) {
+          div.addEventListener('click', () => buyUpgrade(id));
+        }
+        container.appendChild(div);
+      });
+  });
+}
+
+function buyUpgrade(id) {
+  const cost = getUpgradeCost(id);
+  if (state.sigmas < cost) {
+    showToast('❌ Не хватает сигм!', false);
+    return;
+  }
+  if (isMaxed(id)) return;
+
+  state.sigmas -= cost;
+  state.upgrades[id] = getUpgradeLevel(id) + 1;
+  saveGame();
+
+  playBuy();
+  showToast(`✅ Куплено: ${UPGRADES[id].name}`);
+
+  renderShop();
+  renderStats();
+}
+
+/* ============================================================
+   ОТРИСОВКА СТАТИСТИКИ
+   ============================================================ */
+function renderStats() {
+  document.getElementById('stat-sigma').textContent = formatNum(state.sigmas);
+  document.getElementById('stat-per-click').textContent = formatNum(getSigmasPerClick());
+  document.getElementById('stat-per-sec').textContent = formatNum(getSigmasPerSec());
+
+  const pct = (state.clickCount / 67) * 100;
+  document.getElementById('bonus-progress').style.width = pct + '%';
+  document.getElementById('bonus-label').textContent =
+    `${state.clickCount} / 67 до бонуса`;
+}
+
+/* ============================================================
+   ВСПЛЫВАЮЩИЕ ЦИФРЫ
+   ============================================================ */
+function spawnClickPopup(x, y, amount, isMeme = false) {
+  const el = document.createElement('div');
+  el.className = isMeme ? 'meme-popup' : 'click-popup';
+  el.textContent = '+' + formatNum(amount);
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.color = isMeme ? '#ff00ff' : '#00ff88';
+  el.style.textShadow = isMeme 
+    ? '0 0 15px #ff00ff, 0 0 30px #ff00ff'
+    : '0 0 10px #00ff88, 0 0 20px #00c853';
+  document.body.appendChild(el);
+
+  el.animate([
+    { transform: 'translate(-50%, -50%) scale(0.5)', opacity: 1 },
+    { transform: 'translate(-50%, -150%) scale(1.2)', opacity: 1, offset: 0.4 },
+    { transform: 'translate(-50%, -250%) scale(0.8)', opacity: 0 }
+  ], { duration: 900, easing: 'cubic-bezier(.2,.7,.4,1)' })
+    .onfinish = () => el.remove();
+}
+
+/* ============================================================
+   КЛИК ПО КНОПКЕ
+   ============================================================ */
+const btn = document.getElementById('btn67');
+let busy = false;
+
+btn.addEventListener('click', (e) => {
+  if (busy) return;
+  busy = true;
+  setTimeout(() => busy = false, 40);
+
+  getCtx();
+
+  let perClick = getSigmasPerClick();
+  let isMemeBonus = false;
+  let memeNum = 0;
+
+  // Проверка мемных бонусов
+  if (getUpgradeLevel('meme69') > 0 && Math.random() < 0.1) {
+    perClick *= 69;
+    isMemeBonus = true;
+    memeNum = 69;
+  }
+  
+  if (getUpgradeLevel('meme1488') > 0 && state.clicks % 1488 === 0 && state.clicks > 0) {
+    perClick *= 1488;
+    isMemeBonus = true;
+    memeNum = 1488;
+  }
+
+  state.sigmas += perClick;
+  state.totalSigmas += perClick;
+  state.clicks++;
+  state.clickCount++;
+
+  const rect = btn.getBoundingClientRect();
+  const cx = e.clientX || (rect.left + rect.width / 2);
+  const cy = e.clientY || (rect.top + rect.height / 2);
+  
+  spawnClickPopup(cx, cy - 20, perClick, isMemeBonus);
+  if (isMemeBonus) {
+    playMemeSound(memeNum);
+    showToast(` МЕМНЫЙ БОНУС ×${memeNum}!`);
+  } else {
+    playClick(state.clicks);
+  }
+
+  spawnVectorCircle(cx, cy, {
+    size: 30 + Math.random() * 50,
+    hue: (state.clicks * 7) % 360
+  });
+
+  if (state.clickCount >= 67) {
+    state.clickCount = 0;
+    triggerBonus(cx, cy);
+  }
+
+  renderStats();
+  renderShop();
+  saveGame();
+});
+
+/* ============================================================
+   БОНУС
+   ============================================================ */
+function triggerBonus(cx, cy) {
+  playFanfare();
+  playExplosion();
+  screenFlash();
+  shakeScreen();
+
+  const bonus = getSigmasPerClick() * 67;
+  state.sigmas += bonus;
+  state.totalSigmas += bonus;
+
+  showToast(`🎉 БОНУС! +${formatNum(bonus)} сигм`);
+
+  for (let i = 0; i < 25; i++) {
+    spawnVectorCircle(cx, cy, {
+      size: 50 + Math.random() * 90,
+      hue: Math.floor(Math.random() * 360)
+    });
+  }
+
+  let spawned = 0;
+  const interval = setInterval(() => {
+    if (spawned >= 67) { clearInterval(interval); return; }
+    const x = Math.random() * window.innerWidth;
+    const y = Math.random() * window.innerHeight;
+    spawnGoshaText(x, y);
+    for (let k = 0; k < 2; k++) {
+      spawnVectorCircle(x, y, { size: 30 + Math.random() * 70 });
+    }
+    if (spawned % 8 === 0) playBlip(400 + Math.random() * 900);
+    if (spawned % 12 === 0) lightning();
+    spawned++;
+  }, 45);
+}
+
+/* ============================================================
+   АВТО-ДОХОД
+   ============================================================ */
+let lastTick = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const dt = (now - lastTick) / 1000;
+  lastTick = now;
+
+  const perSec = getSigmasPerSec();
+  if (perSec > 0) {
+    const gain = perSec * dt;
+    state.sigmas += gain;
+    state.totalSigmas += gain;
+    renderStats();
+  }
+}, 100);
+
+setInterval(saveGame, 5000);
+
+/* ============================================================
+   СБРОС
+   ============================================================ */
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (confirm('Точно сбросить весь прогресс?')) {
+    state = { ...defaultState };
+    saveGame();
+    renderShop();
+    renderStats();
+    renderGallery();
+    showToast('🗑 Прогресс сброшен', false);
+  }
+});
+
+/* ============================================================
+   ТАБЫ
+   ============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ============================================================
+   МОБИЛЬНЫЙ МАГАЗИН
+   ============================================================ */
+const shop = document.getElementById('shop');
+document.getElementById('shop-toggle').addEventListener('click', () => {
+  shop.classList.toggle('open');
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target === btn) return;
+  if (e.target.closest('#shop')) return;
+  if (e.target.closest('button')) return;
+  for (let i = 0; i < 2; i++) {
+    spawnVectorCircle(e.clientX, e.clientY);
+  }
+  playBlip(600 + Math.random() * 600);
+});
+
+/* ============================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ============================================================ */
+renderShop();
+renderStats();
+renderGallery();
+
+document.addEventListener('click', () => getCtx(), { once: true });
+</script>
+
+</body>
+</html>
