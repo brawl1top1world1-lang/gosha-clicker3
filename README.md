@@ -1,0 +1,1 @@
+# gosha-clicker3
